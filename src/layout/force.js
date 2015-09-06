@@ -25,7 +25,8 @@ d3.layout.force = function() {
       links = [],
       distances,
       strengths,
-      charges;
+      charges,
+      random = Math.random;
 
   function repulse(node) {
     return function(quad, x1, _, x2) {
@@ -105,7 +106,7 @@ d3.layout.force = function() {
 
     // compute quadtree center of mass and apply charge forces
     if (charge) {
-      d3_layout_forceAccumulate(q = d3.geom.quadtree(nodes), alpha, charges);
+      d3_layout_forceAccumulate(q = d3.geom.quadtree(nodes), alpha, charges, random);
       i = -1; while (++i < n) {
         if (!(o = nodes[i]).fixed) {
           q.visit(repulse(o));
@@ -268,7 +269,7 @@ d3.layout.force = function() {
           l = candidates.length,
           x;
       while (++j < l) if (!isNaN(x = candidates[j][dimension])) return x;
-      return Math.random() * size;
+      return random() * size;
     }
 
     return force.resume();
@@ -302,6 +303,12 @@ d3.layout.force = function() {
     force.resume(); // restart annealing
   }
 
+  force.random = function(x) {
+    if (!arguments.length) return random;
+    random = x;
+    return force;
+  };
+
   return d3.rebind(force, event, "on");
 };
 
@@ -328,7 +335,7 @@ function d3_layout_forceMouseout(d) {
   d.fixed &= ~4; // unset bit 3
 }
 
-function d3_layout_forceAccumulate(quad, alpha, charges) {
+function d3_layout_forceAccumulate(quad, alpha, charges, random) {
   var cx = 0,
       cy = 0;
   quad.charge = 0;
@@ -340,7 +347,7 @@ function d3_layout_forceAccumulate(quad, alpha, charges) {
     while (++i < n) {
       c = nodes[i];
       if (c == null) continue;
-      d3_layout_forceAccumulate(c, alpha, charges);
+      d3_layout_forceAccumulate(c, alpha, charges, random);
       quad.charge += c.charge;
       cx += c.charge * c.cx;
       cy += c.charge * c.cy;
@@ -349,8 +356,8 @@ function d3_layout_forceAccumulate(quad, alpha, charges) {
   if (quad.point) {
     // jitter internal nodes that are coincident
     if (!quad.leaf) {
-      quad.point.x += Math.random() - .5;
-      quad.point.y += Math.random() - .5;
+      quad.point.x += random() - .5;
+      quad.point.y += random() - .5;
     }
     var k = alpha * charges[quad.point.index];
     quad.charge += quad.pointCharge = k;
